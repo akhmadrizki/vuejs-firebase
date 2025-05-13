@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import TaskForm from './components/TaskForm.vue'
+import TaskList from './components/TaskList.vue'
 
 // state
 const taskToEdit = ref(null)
@@ -16,9 +17,9 @@ const handleTaskUpdated = () => {
   refreshFlag.value = !refreshFlag.value
 }
 
-// const handleEditTask = (task) => {
-//   taskToEdit.value = task
-// }
+const handleEditTask = (task) => {
+  taskToEdit.value = task
+}
 
 const handleCancelEdit = () => {
   taskToEdit.value = null
@@ -31,6 +32,11 @@ const handleCancelEdit = () => {
     @taskAdded="handleTaskAdded"
     @taskUpdated="handleTaskUpdated"
     @cancel="handleCancelEdit"
+  />
+
+  <TaskList
+    :refreshFlag="refreshFlag"
+    @edit="handleEditTask"
   />
 </template>
 

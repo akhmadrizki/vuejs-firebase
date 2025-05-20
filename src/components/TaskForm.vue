@@ -103,3 +103,60 @@ const cancelEdit = () => {
     </form>
   </div>
 </template>
+
+<style scoped>
+
+.task-form {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  color: black;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+input[type="text"],
+textarea,
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+}
+
+textarea {
+  height: 100px;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.btn-submit {
+  background-color: aqua;
+  color: black;
+}
+
+.btn-cancel {
+  background-color: red;
+  color: white;
+}
+
+</style>

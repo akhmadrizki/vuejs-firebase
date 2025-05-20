@@ -19,72 +19,74 @@ const loading = ref(true)
 const formatStatus = (status) => {
   switch (status) {
     case 'pending':
-      return 'Pending';
+      return 'Pending'
     case 'in-progress':
-      return 'In Progress';
+      return 'In Progress'
     case 'completed':
-      return 'Completed';
+      return 'Completed'
     default:
-      return status;
+      return status
   }
-};
+}
 
 // Ambil data dari firebase
 const fetchTasks = () => {
-  const tasksCollection = collection(db, 'tasks');
-  const tasksQuery = query(tasksCollection, orderBy('createdAt', 'desc'));
+  const tasksCollection = collection(db, 'tasks')
+  const tasksQuery = query(tasksCollection, orderBy('createdAt', 'desc'))
 
-  const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
-    const tasksData = [];
-    snapshot.forEach((doc) => {
-      const task = {
-        id: doc.id,
-        ...doc.data()
-      };
+  const unsubscribe = onSnapshot(
+    tasksQuery,
+    (snapshot) => {
+      const tasksData = []
+      snapshot.forEach((doc) => {
+        const task = {
+          id: doc.id,
+          ...doc.data(),
+        }
 
-      // convert datetime
-      if (task.createdAt && task.createdAt.toDate) {
-        task.createdAt = task.createdAt.toDate();
-      }
+        // convert datetime
+        if (task.createdAt && task.createdAt.toDate) {
+          task.createdAt = task.createdAt.toDate()
+        }
 
-      tasksData.push(task);
-    });
+        tasksData.push(task)
+      })
 
-    tasks.value = tasksData;
-    loading.value = false;
-  }, (error) => {
-    console.error('Gagal ambil data');
-    loading.value = false;
-  });
+      tasks.value = tasksData
+      loading.value = false
+    },
+    (error) => {
+      console.error('Gagal ambil data')
+      loading.value = false
+    },
+  )
 
-  return unsubscribe;
-
-};
+  return unsubscribe
+}
 
 // Delete Task List
 const deleteTask = async (taskId) => {
   if (confirm('Apakah Yakin Mau Di Hapus?')) {
     try {
-      const taskRef = doc(db, 'tasks', taskId);
-      await deleteDoc(taskRef);
+      const taskRef = doc(db, 'tasks', taskId)
+      await deleteDoc(taskRef)
     } catch (error) {
-      console.error('Gagal Delete');
+      console.error('Gagal Delete')
     }
   }
-};
+}
 
 // Edit Task
 const editTask = (task) => {
-  emit('edit', task);
-};
+  emit('edit', task)
+}
 
 // lifesycle hook
-let unsubscribe;
+let unsubscribe
 
 onMounted(() => {
-  unsubscribe = fetchTasks();
-});
-
+  unsubscribe = fetchTasks()
+})
 </script>
 
 <template>
@@ -113,3 +115,69 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.task-list {
+  margin-top: 20px;
+}
+
+.loading,
+.no-task {
+  text-align: center;
+  padding: 20px;
+  color: #fff;
+}
+
+.task-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border-left: 5px solid #4caf50;
+  margin-bottom: 20px;
+}
+
+.task-card.pending {
+  border-left-color: #ff9800;
+}
+
+.task-card.in-progress {
+  border-left-color: #2196f3;
+}
+
+.task-content {
+  margin-top: 0;
+  color: black;
+}
+
+/* .task-status {
+  margin-top: 10px;
+  font-size: 14px;
+  color: red;
+} */
+
+.task-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.btn-edit,
+.btn-delete {
+  padding: 5px 15px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-edit {
+  background-color: #2196f3;
+  color: white;
+}
+
+.btn-delete {
+  background-color: red;
+  color: white;
+}
+</style>

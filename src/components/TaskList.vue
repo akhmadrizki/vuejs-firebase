@@ -1,104 +1,120 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { collection, query, orderBy, onSnapshot, doc, deleteDoc } from 'firebase/firestore'
-import { db } from '../firebase/config'
+import { ref, onMounted } from 'vue';
+import { collection, query, orderBy, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { isAuthenticated } from '../stores/auth';
 
 // Props
 const props = defineProps({
-  refreshFlag: Boolean,
-})
+  refreshFlag: Boolean
+});
 
 // Emits
-const emit = defineEmits(['edit'])
+const emit = defineEmits(['edit']);
 
 // Data
-const tasks = ref([])
-const loading = ref(true)
+const tasks = ref([]);
+const loading = ref(true);
 
-// format status
+// Format task status for display
 const formatStatus = (status) => {
   switch (status) {
     case 'pending':
-      return 'Pending'
+      return 'Pending';
     case 'in-progress':
-      return 'In Progress'
+      return 'In Progress';
     case 'completed':
-      return 'Completed'
+      return 'Completed';
     default:
-      return status
+      return status;
   }
-}
+};
 
-// Ambil data dari firebase
+// Fetch tasks from Firestore
 const fetchTasks = () => {
-  const tasksCollection = collection(db, 'tasks')
-  const tasksQuery = query(tasksCollection, orderBy('createdAt', 'desc'))
+  const tasksCollection = collection(db, 'tasks');
+  const tasksQuery = query(tasksCollection, orderBy('createdAt', 'desc'));
+  
+  const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
+    const tasksData = [];
+    snapshot.forEach((doc) => {
+      const task = {
+        id: doc.id,
+        ...doc.data()
+      };
+      
+      // Convert Firestore timestamp to Date object
+      if (task.createdAt && task.createdAt.toDate) {
+        task.createdAt = task.createdAt.toDate();
+      }
+      
+      tasksData.push(task);
+    });
+    
+    tasks.value = tasksData;
+    loading.value = false;
+  }, (error) => {
+    console.error('Error fetching tasks: ', error);
+    loading.value = false;
+  });
+  
+  return unsubscribe;
+};
 
-  const unsubscribe = onSnapshot(
-    tasksQuery,
-    (snapshot) => {
-      const tasksData = []
-      snapshot.forEach((doc) => {
-        const task = {
-          id: doc.id,
-          ...doc.data(),
-        }
-
-        // convert datetime
-        if (task.createdAt && task.createdAt.toDate) {
-          task.createdAt = task.createdAt.toDate()
-        }
-
-        tasksData.push(task)
-      })
-
-      tasks.value = tasksData
-      loading.value = false
-    },
-    (error) => {
-      console.error('Gagal ambil data')
-      loading.value = false
-    },
-  )
-
-  return unsubscribe
-}
-
-// Delete Task List
+// Delete a task (only if authenticated)
 const deleteTask = async (taskId) => {
-  if (confirm('Apakah Yakin Mau Di Hapus?')) {
+  if (!isAuthenticated.value) {
+    alert('Please login to delete tasks');
+    return;
+  }
+  
+  if (confirm('Are you sure you want to delete this task?')) {
     try {
-      const taskRef = doc(db, 'tasks', taskId)
-      await deleteDoc(taskRef)
+      const taskRef = doc(db, 'tasks', taskId);
+      await deleteDoc(taskRef);
     } catch (error) {
-      console.error('Gagal Delete')
+      console.error('Error deleting task: ', error);
     }
   }
-}
+};
 
-// Edit Task
+// Edit a task (only if authenticated)
 const editTask = (task) => {
-  emit('edit', task)
-}
+  if (!isAuthenticated.value) {
+    alert('Please login to edit tasks');
+    return;
+  }
+  
+  emit('edit', task);
+};
 
-// lifesycle hook
-let unsubscribe
+// Lifecycle hooks
+let unsubscribe;
 
 onMounted(() => {
-  unsubscribe = fetchTasks()
-})
+  unsubscribe = fetchTasks();
+});
 </script>
 
 <template>
   <div class="task-list">
-    <h2>Task List:</h2>
-
-    <div class="loading" v-if="loading">loading...</div>
-
-    <div class="no-task" v-else-if="tasks.length === 0">Belum Ada Task Yang Dibuat</div>
-
-    <div class="tasks" v-else>
-      <div class="task-card" v-for="task in tasks" :key="task.id" :class="task.status">
+    <h2>Tasks</h2>
+    
+    <div v-if="loading" class="loading">
+      Loading tasks...
+    </div>
+    
+    <div v-else-if="tasks.length === 0" class="no-tasks">
+      No tasks found. Add a new task to get started!
+    </div>
+    
+    <div v-else class="tasks">
+      <div 
+        v-for="task in tasks" 
+        :key="task.id" 
+        class="task-card"
+        :class="task.status"
+      >
         <div class="task-content">
           <h3>{{ task.title }}</h3>
           <p>{{ task.description }}</p>
@@ -106,10 +122,20 @@ onMounted(() => {
             Status: <span>{{ formatStatus(task.status) }}</span>
           </div>
         </div>
-
-        <div class="task-actions">
-          <button @click="editTask(task)" class="btn-edit">Edit</button>
-          <button @click="deleteTask(task.id)" class="btn-delete">Delete</button>
+        
+        <!-- Only show edit/delete buttons if authenticated -->
+        <div v-if="isAuthenticated" class="task-actions">
+          <button @click="editTask(task)" class="btn-edit">
+            Edit
+          </button>
+          <button @click="deleteTask(task.id)" class="btn-delete">
+            Delete
+          </button>
+        </div>
+        
+        <!-- Show login message if not authenticated -->
+        <div v-else class="auth-message">
+          <small>Login to edit or delete tasks</small>
         </div>
       </div>
     </div>

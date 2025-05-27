@@ -1,43 +1,78 @@
 <script setup>
-import { ref } from 'vue'
-import TaskForm from './components/TaskForm.vue'
-import TaskList from './components/TaskList.vue'
+import { ref } from 'vue';
+import { isAuthenticated } from './stores/auth';
+import LoginForm from './components/Login.vue';
+import AppHeader from './components/AppHeader.vue';
+import TaskForm from './components/TaskForm.vue';
+import TaskList from './components/TaskList.vue';
 
-// state
-const taskToEdit = ref(null)
-const refreshFlag = ref(false)
+// State
+const taskToEdit = ref(null);
+const refreshFlag = ref(false);
 
-// event handler
+// Authentication event handlers
+const handleLoginSuccess = () => {
+  // Authentication state is handled by the auth store
+  // Component will automatically re-render when isAuthenticated changes
+  console.log('Login successful!');
+};
+
+const handleLogout = () => {
+  // Clear any editing state when logging out
+  taskToEdit.value = null;
+  console.log('Logged out successfully!');
+};
+
+// Task management event handlers
 const handleTaskAdded = () => {
-  refreshFlag.value = !refreshFlag.value
-}
+  refreshFlag.value = !refreshFlag.value;
+};
 
 const handleTaskUpdated = () => {
-  taskToEdit.value = null
-  refreshFlag.value = !refreshFlag.value
-}
+  taskToEdit.value = null;
+  refreshFlag.value = !refreshFlag.value;
+};
 
 const handleEditTask = (task) => {
-  taskToEdit.value = task
-}
+  taskToEdit.value = task;
+};
 
 const handleCancelEdit = () => {
-  taskToEdit.value = null
-}
+  taskToEdit.value = null;
+};
 </script>
 
 <template>
-  <TaskForm
-    :editTask="taskToEdit"
-    @taskAdded="handleTaskAdded"
-    @taskUpdated="handleTaskUpdated"
-    @cancel="handleCancelEdit"
-  />
-
-  <TaskList
-    :refreshFlag="refreshFlag"
-    @edit="handleEditTask"
-  />
+  <div class="app">
+    <!-- Show Login Form if not authenticated -->
+    <LoginForm 
+      v-if="!isAuthenticated" 
+      @loginSuccess="handleLoginSuccess"
+    />
+    
+    <!-- Show Main App if authenticated -->
+    <div v-else>
+      <AppHeader @logout="handleLogout" />
+      
+      <main>
+        <TaskForm 
+          :editTask="taskToEdit" 
+          @taskAdded="handleTaskAdded" 
+          @taskUpdated="handleTaskUpdated" 
+          @cancelEdit="handleCancelEdit"
+        />
+        
+        <TaskList 
+          :refreshFlag="refreshFlag" 
+          @edit="handleEditTask"
+        />
+      </main>
+      
+      <footer>
+        <p>Simple Vue 3 + Firebase CRUD App with Authentication | {{ new Date().getFullYear() }}</p>
+      </footer>
+    </div>
+  </div>
 </template>
 
 <style scoped>
